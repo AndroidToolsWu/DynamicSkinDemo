@@ -1,0 +1,76 @@
+package com.example.dynamicskindemo;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.widget.Button;
+
+import com.example.dynamicskindemo.skin.SkinEngine;
+import com.example.dynamicskindemo.skin.SkinFactory;
+
+import java.io.File;
+
+public class MainActivity extends AppCompatActivity {
+
+    public static String TAG = "MainActivity";
+    private boolean isAllowChangeSkin = true;
+    private SkinFactory mSkinFactory;
+    private Button mButton;
+
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"};
+
+    public static void verifyStoragePermissions(AppCompatActivity activity) {
+
+        try {
+            //检测是否有写的权限
+            int permission = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 没有写的权限，去申请写的权限，会弹出对话框
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        //hook系统创建view的过程
+        if (isAllowChangeSkin){
+            mSkinFactory = new SkinFactory();
+            mSkinFactory.setDelegate(getDelegate());
+            LayoutInflater layoutInflater = LayoutInflater.from(this);
+            layoutInflater.setFactory2(mSkinFactory); //劫持系统源码的逻辑
+        }
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        verifyStoragePermissions(this);
+        initView();
+    }
+
+    private void initView() {
+        mButton = findViewById(R.id.btn);
+        mButton.setOnClickListener( v ->{
+            changeSkin();
+        });
+    }
+
+    protected void changeSkin(){
+        if (isAllowChangeSkin){
+            File skinFile = new File(Environment.getExternalStorageDirectory(), "SkinDemo/skin.apk");
+            Log.d(TAG, "changeSkin:" + skinFile.getAbsolutePath());
+            SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
+            mSkinFactory.changeSkin(); //执行换肤操作
+        }
+    }
+
+}
