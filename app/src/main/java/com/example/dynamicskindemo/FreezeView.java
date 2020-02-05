@@ -9,7 +9,7 @@ import androidx.annotation.Nullable;
 public class FreezeView extends View {
 
     public FreezeView(Context context) {
-        super(context);
+        this(context,null);
     }
 
     public FreezeView(Context context, @Nullable AttributeSet attrs) {

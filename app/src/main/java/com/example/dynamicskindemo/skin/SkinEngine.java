@@ -53,6 +53,7 @@ public class SkinEngine {
             //因为addAssetPath为私有方法，如果使用就需要通过反射的方式
             assetManager = AssetManager.class.newInstance();
             Method addAssetPath = assetManager.getClass().getMethod("addAssetPath", String.class);
+            addAssetPath.setAccessible(true);
             addAssetPath.invoke(assetManager, path); //反射执行方法，设置加载路径
             mResources = new Resources(assetManager   //资源管理器
                     , mContext.getResources().getDisplayMetrics() //屏幕参数

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 public class SkinFactory implements LayoutInflater.Factory2 {
 
 
+    private static final String TAG = "SkinFactory";
     //预定义一个委托类，它负责按照系统的原有逻辑来创建view
     private AppCompatDelegate mDelegate;
     //我自定义的List，缓存所有可变肤view
@@ -82,8 +84,10 @@ public class SkinFactory implements LayoutInflater.Factory2 {
             skinView.view = view;
             skinView.attrsMap = attrMap;
             mListCacheSkinView.add(skinView);  //将可换肤的view，放到mListCacheSkinView中
+            Log.d(TAG, "collectSkinView: 收集view : " + skinView.view.toString());
         }
-        // fixme typedArray.recycle();
+
+        typedArray.recycle();
     }
 
     /*
