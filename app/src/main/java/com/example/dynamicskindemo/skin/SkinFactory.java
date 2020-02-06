@@ -2,6 +2,7 @@ package com.example.dynamicskindemo.skin;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -17,32 +18,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.core.view.ViewCompat;
 
 public class SkinFactory implements LayoutInflater.Factory2 {
 
 
     private static final String TAG = "SkinFactory";
-    //预定义一个委托类，它负责按照系统的原有逻辑来创建view
     private AppCompatDelegate mDelegate;
-    //我自定义的List，缓存所有可变肤view
-    private List<SkinView> mListCacheSkinView = new ArrayList<>();
+
+    //缓存所有可变肤view
+    private static List<SkinView> CACHE_SKINVIEW = new ArrayList<>();
+    private static List<SkinChangeListener> LISTENER_LIST = new ArrayList<>();
 
 
     public void setDelegate(AppCompatDelegate delegate) {
         mDelegate = delegate;
     }
 
+
     @Nullable
-    @Override
+    @Override   //拦截系统创建view的过程
     public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context, @NonNull AttributeSet attributeSet) {
-        //执行系统代码里的创建View的过程，我们只想加入自己的操作，并不是要全盘接管
-        //系统创建出来的有时候会为空
         View view = mDelegate.createView(parent, name, context, attributeSet);
         if (view == null) {
             if (-1 == name.indexOf('.')) {
@@ -51,6 +50,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
                 view = createViewByPrefix(context, name, null, attributeSet);
             }
         }
+        //收集可换肤view
         collectSkinView(context, attributeSet, view);
         return view;
 
@@ -70,34 +70,50 @@ public class SkinFactory implements LayoutInflater.Factory2 {
      * 收集的方式是：通过自定义属性isSupport，从创建出来的很多View中，找到支持换肤的那些，保存到map中
      */
     private void collectSkinView(Context context, AttributeSet attrs, View view) {
-        //获得我们自定义的属性
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.Skinable);
         boolean isSupport = typedArray.getBoolean(R.styleable.Skinable_isSupport, false);
-        if (isSupport) { //找到支持换肤的View
+        if (isSupport) {        //找到支持换肤的View
             final int len = attrs.getAttributeCount();
             HashMap<String, String> attrMap = new HashMap<>();
             for (int i = 0; i < len; i++) {
                 String attrName = attrs.getAttributeName(i);
                 String attrValue = attrs.getAttributeValue(i);
-                attrMap.put(attrName, attrValue); //将所有可换肤属性存起来
+                attrMap.put(attrName, attrValue);       //将所有可换肤属性存起来
             }
-
             SkinView skinView = new SkinView();
             skinView.view = view;
             skinView.attrsMap = attrMap;
-            mListCacheSkinView.add(skinView);  //将可换肤的view，放到mListCacheSkinView中
-            //Log.d(TAG, "collectSkinView: 收集view : " + skinView.view.toString());
+            CACHE_SKINVIEW.add(skinView);       //将可换肤的view，放到CACHE_SKINVIEW中
+            Log.d(TAG, "collectSkinView: 收集view : " + skinView.view.toString());
         }
         typedArray.recycle();
     }
 
-    /*
-        公开给外界换肤的入口
+    //添加更换皮肤的监听器
+    public static void addSkinChangeListener(SkinChangeListener listener){
+        LISTENER_LIST.add(listener);
+    }
+
+    public static void removeSkinChangeListener(SkinChangeListener listener){
+        LISTENER_LIST.remove(listener);
+    }
+
+    //通知所有监听器执行更换皮肤操作
+    private static void notifySkinListeners(){
+        for (SkinChangeListener listener : LISTENER_LIST){
+            listener.onSkinChange();
+        }
+    }
+
+
+    /**
+     * 公开给外界换肤的入口
      */
-    public void changeSkin() {
-        for (SkinView skinView : mListCacheSkinView) {
+    public static void changeSkin() {
+        for (SkinView skinView : CACHE_SKINVIEW) {
             skinView.changeSkin();
         }
+        notifySkinListeners();
     }
 
     static class SkinView {
@@ -109,7 +125,8 @@ public class SkinFactory implements LayoutInflater.Factory2 {
          */
         private void changeSkin() {
             for (Map.Entry<String,String> entry : attrsMap.entrySet()){
-                String attrStr = entry.getValue().substring(1);
+                //属性开头可能是？、@、#
+                String attrStr = filterValue(entry.getValue());
                 switch (entry.getKey()){
                     case "background":
                         Object bgValue = SkinEngine.getInstance().getBackground(Integer.parseInt(attrStr));
@@ -120,7 +137,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
                         }
                         break;
                     case "textColor":
-                        ((TextView) view).setTextColor(Integer.parseInt(attrStr));
+                        ((TextView) view).setTextColor(SkinEngine.getInstance().getColor(Integer.parseInt(attrStr)));
                         break;
                     default:
                         break;
@@ -128,6 +145,18 @@ public class SkinFactory implements LayoutInflater.Factory2 {
             }
 
         }
+
+        //过滤资源类型
+        private String filterValue(String value){
+            if (value.startsWith("#")){
+                return value;
+            }else if (value.startsWith("@") || value.startsWith("?")){
+                return value.substring(1);
+            }else {
+                return value;
+            }
+        }
+
     }
 
     static final Class<?>[] mConstructorSignature = new Class[]{Context.class, AttributeSet.class};

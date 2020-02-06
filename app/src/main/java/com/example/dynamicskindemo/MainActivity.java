@@ -2,6 +2,8 @@ package com.example.dynamicskindemo;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -10,17 +12,25 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.Button;
 
+import com.example.dynamicskindemo.recycler.RecyclerAdapter;
+import com.example.dynamicskindemo.skin.SkinChangeListener;
 import com.example.dynamicskindemo.skin.SkinEngine;
 import com.example.dynamicskindemo.skin.SkinFactory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements  SkinChangeListener{
 
     public static String TAG = "MainActivity";
     private boolean isAllowChangeSkin = true;
     private SkinFactory mSkinFactory;
     private Button mButton;
+    private RecyclerView mRecyclerView;
+    private RecyclerAdapter mRecyclerAdapter;
+
+    private List<String> mListData = new ArrayList<>();
 
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {
@@ -54,7 +64,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         verifyStoragePermissions(this);
+        initData();
         initView();
+    }
+
+    private void initData() {
+        for (int i=0; i<20; i++){
+            mListData.add("Hello Ninebot"+i);
+        }
     }
 
     private void initView() {
@@ -62,6 +79,26 @@ public class MainActivity extends AppCompatActivity {
         mButton.setOnClickListener( v ->{
             changeSkin();
         });
+
+
+        SkinFactory.addSkinChangeListener(MainActivity.this);
+        mRecyclerView = findViewById(R.id.recycler);
+        RecyclerView.LayoutManager manager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(manager);
+        mRecyclerAdapter = new RecyclerAdapter(mListData);
+        mRecyclerView.setAdapter(mRecyclerAdapter);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        SkinFactory.removeSkinChangeListener(MainActivity.this);
+        super.onDestroy();
+    }
+
+    @Override
+    public void onSkinChange() {
+        mRecyclerAdapter.notifyDataSetChanged();
     }
 
     protected void changeSkin(){
@@ -72,5 +109,6 @@ public class MainActivity extends AppCompatActivity {
             mSkinFactory.changeSkin(); //执行换肤操作
         }
     }
+
 
 }

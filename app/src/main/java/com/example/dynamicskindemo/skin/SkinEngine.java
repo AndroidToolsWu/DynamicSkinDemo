@@ -17,7 +17,6 @@ import androidx.core.content.ContextCompat;
 @SuppressLint("StaticFieldLeak")
 public class SkinEngine {
 
-    //饿汉模式
     private final static SkinEngine instance = new SkinEngine();
     private Resources mResources;
     private Context mContext;
@@ -32,8 +31,6 @@ public class SkinEngine {
     }
 
     public void init(Context context) {
-        //使用application的目的是，如果万一传进来的是activity对象
-        //那么它被静态对象instance所持有，这个Activity就无法释放了
         mContext = context.getApplicationContext();
     }
 
