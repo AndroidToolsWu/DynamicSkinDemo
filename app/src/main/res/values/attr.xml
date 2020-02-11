@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="Skinable">
-        <attr name="isSupport" format="boolean"/>
+        <attr name="support_skin" format="boolean"/>
     </declare-styleable>
 </resources>

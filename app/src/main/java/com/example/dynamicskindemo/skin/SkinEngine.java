@@ -6,8 +6,10 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -66,7 +68,7 @@ public class SkinEngine {
      * @param resId
      * @return
      */
-    public int getColor(int resId) {
+    int getColor(int resId) {
         if (mResources == null) {
             return resId;
         }
@@ -77,13 +79,25 @@ public class SkinEngine {
         return mResources.getColor(outResId);
     }
 
+    @SuppressLint("NewApi")
+    Typeface getTypeFace(int resId){
+        if (mResources == null){
+            return null;
+        }
+        int outResId = getIdentifier(resId);
+        if (outResId == 0){
+            return null;
+        }
+        return mResources.getFont(outResId);
+    }
+
     /**
      * 提供外部资源包的图片
      *
      * @param resId
      * @return
      */
-    public Drawable getDrawable(int resId) {
+    Drawable getDrawable(int resId) {
         if (mResources == null) {
             return ContextCompat.getDrawable(mContext, resId);
         }
@@ -94,7 +108,10 @@ public class SkinEngine {
         return mResources.getDrawable(outResId);
     }
 
-    public Object getBackground(int resId){
+    Object getBackground(int resId){
+        if (mResources == null){
+            return null;
+        }
         String typeName = mResources.getResourceTypeName(resId);
         if (TextUtils.equals(typeName,"drawable")){
             return getDrawable(resId);
@@ -104,11 +121,14 @@ public class SkinEngine {
         return null;
     }
 
+    Object getSrc(int resId){
+        return getBackground(resId);
+    }
+
     private int getIdentifier(int resId) {
         String resName = mResources.getResourceEntryName(resId);  //名称，例如ic_launcher
         String resType = mResources.getResourceTypeName(resId);   //类型，例如drawable
-        int skinId = mResources.getIdentifier(resName, resType, mPackageName);
-        return skinId;
+        return mResources.getIdentifier(resName, resType, mPackageName);
     }
 
 

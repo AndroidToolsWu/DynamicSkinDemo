@@ -7,10 +7,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.dynamicskindemo.R;
-import com.example.dynamicskindemo.skin.SkinEngine;
 import com.example.dynamicskindemo.skin.SkinFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -33,7 +31,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHold
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerAdapter.MyHolder holder, int position) {
-        holder.mTextView.setText(mData.get(position));
+        holder.setData(mData.get(position));
     }
 
     @Override
@@ -50,7 +48,14 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHold
             super(itemView);
             mTextView = itemView.findViewById(R.id.tv);
             mImageView = itemView.findViewById(R.id.iv);
-
+            SkinFactory.setViewSkin(mTextView);
+            SkinFactory.setViewSkin(mImageView);
         }
+
+        public void setData(String data){
+            SkinFactory.applyRecyclerViewSkin(itemView);
+            mTextView.setText(data);
+        }
+
     }
 }

@@ -3,15 +3,20 @@ package com.example.dynamicskindemo.skin;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.dynamicskindemo.R;
+import com.example.dynamicskindemo.app.Application;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -22,6 +27,7 @@ import java.util.Map;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.content.res.ResourcesCompat;
 
 public class SkinFactory implements LayoutInflater.Factory2 {
 
@@ -30,7 +36,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     private AppCompatDelegate mDelegate;
 
     //缓存所有可变肤view
-    private static List<SkinView> CACHE_SKINVIEW = new ArrayList<>();
+    private static List<SkinView> SKINVIEW_CACHE = new ArrayList<>();
     private static List<SkinChangeListener> LISTENER_LIST = new ArrayList<>();
 
 
@@ -71,7 +77,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
      */
     private void collectSkinView(Context context, AttributeSet attrs, View view) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.Skinable);
-        boolean isSupport = typedArray.getBoolean(R.styleable.Skinable_isSupport, false);
+        boolean isSupport = typedArray.getBoolean(R.styleable.Skinable_support_skin, false);
         if (isSupport) {        //找到支持换肤的View
             final int len = attrs.getAttributeCount();
             HashMap<String, String> attrMap = new HashMap<>();
@@ -83,10 +89,28 @@ public class SkinFactory implements LayoutInflater.Factory2 {
             SkinView skinView = new SkinView();
             skinView.view = view;
             skinView.attrsMap = attrMap;
-            CACHE_SKINVIEW.add(skinView);       //将可换肤的view，放到CACHE_SKINVIEW中
-            Log.d(TAG, "collectSkinView: 收集view : " + skinView.view.toString());
+            SKINVIEW_CACHE.add(skinView);       //将可换肤的view，放到CACHE_SKINVIEW中
+            //Log.d(TAG, "collectSkinView: 收集view : " + skinView.view.toString());
         }
         typedArray.recycle();
+    }
+
+    public static void setViewSkin(View viewSkin){
+        for (SkinView skinView : SKINVIEW_CACHE){
+            if (skinView.view == viewSkin){
+                skinView.changeSkin();
+            }
+        }
+    }
+
+    public static void applyRecyclerViewSkin(View view){
+        setViewSkin(view);
+        if (view instanceof ViewGroup){
+            ViewGroup parent = (ViewGroup) view;
+            for (int i=0; i<parent.getChildCount(); i++){
+                applyRecyclerViewSkin(parent.getChildAt(i));
+            }
+        }
     }
 
     //添加更换皮肤的监听器
@@ -99,7 +123,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     }
 
     //通知所有监听器执行更换皮肤操作
-    private static void notifySkinListeners(){
+    public static void notifySkinListeners(){
         for (SkinChangeListener listener : LISTENER_LIST){
             listener.onSkinChange();
         }
@@ -110,10 +134,9 @@ public class SkinFactory implements LayoutInflater.Factory2 {
      * 公开给外界换肤的入口
      */
     public static void changeSkin() {
-        for (SkinView skinView : CACHE_SKINVIEW) {
+        for (SkinView skinView : SKINVIEW_CACHE) {
             skinView.changeSkin();
         }
-        notifySkinListeners();
     }
 
     static class SkinView {
@@ -136,8 +159,21 @@ public class SkinFactory implements LayoutInflater.Factory2 {
                             view.setBackgroundColor((Integer) bgValue);
                         }
                         break;
+                    case "src":
+                        Object srcValue = SkinEngine.getInstance().getSrc(Integer.parseInt(attrStr));
+                        if (view instanceof ImageView){
+                            if (srcValue instanceof Drawable){
+                                ((ImageView) view).setImageDrawable((Drawable) srcValue);
+                            }else if (srcValue instanceof Integer){
+                                ((ImageView) view).setColorFilter((Integer) srcValue);
+                            }
+                        }
+                        break;
                     case "textColor":
                         ((TextView) view).setTextColor(SkinEngine.getInstance().getColor(Integer.parseInt(attrStr)));
+                        break;
+                    case "fontFamily":
+                        ((TextView) view).setTypeface(SkinEngine.getInstance().getTypeFace(Integer.parseInt(attrStr)));
                         break;
                     default:
                         break;
@@ -160,24 +196,20 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     }
 
     static final Class<?>[] mConstructorSignature = new Class[]{Context.class, AttributeSet.class};
+    //系统view都在这几个包当中
     static final String[] prefixs = new String[]{
             "android.widget.",
             "android.view.",
             "android.webkit."
     };
+    //用于存储view的构造
     private static final HashMap<String, Constructor<? extends View>> sConstructorMap = new HashMap<>();
     final Object[] mConstructorArgs = new Object[2];
 
     /**
      * 反射创建View
-     *
-     * @param context
-     * @param name
-     * @param prefixs
-     * @param attrs
-     * @return
      */
-    private final View createViewByPrefix(Context context, String name, String[] prefixs, AttributeSet attrs) {
+    private View createViewByPrefix(Context context, String name, String[] prefixs, AttributeSet attrs) {
 
         Constructor<? extends View> constructor = sConstructorMap.get(name);
         Class<? extends View> clazz = null;

@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements  SkinChangeListen
             Log.d(TAG, "changeSkin:" + skinFile.getAbsolutePath());
             SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
             mSkinFactory.changeSkin(); //执行换肤操作
+            SkinFactory.notifySkinListeners();
         }
     }
 

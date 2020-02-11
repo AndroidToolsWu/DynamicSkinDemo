@@ -13,7 +13,7 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/bg"
-        app:isSupport="true"
+        app:support_skin="true"
         android:layout_marginStart="18dp"
         />
 
@@ -23,8 +23,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello Ninebot"
+        android:fontFamily="@font/roboto_light"
         android:textColor="@color/colorPrimaryDark"
-        app:isSupport="true"
+        app:support_skin="true"
         android:textSize="20sp"
         android:layout_marginStart="20dp"
         />
