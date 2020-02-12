@@ -5,6 +5,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
@@ -24,9 +25,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements  SkinChangeListener{
 
     public static String TAG = "MainActivity";
-    private boolean isAllowChangeSkin = true;
-    private SkinFactory mSkinFactory;
-    private Button mButton;
+    private Button mButton,mButton2;
     private RecyclerView mRecyclerView;
     private RecyclerAdapter mRecyclerAdapter;
 
@@ -54,13 +53,6 @@ public class MainActivity extends AppCompatActivity implements  SkinChangeListen
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //hook系统创建view的过程
-        if (isAllowChangeSkin){
-            mSkinFactory = new SkinFactory();
-            mSkinFactory.setDelegate(getDelegate());
-            LayoutInflater layoutInflater = LayoutInflater.from(this);
-            layoutInflater.setFactory2(mSkinFactory); //劫持系统源码的逻辑
-        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         verifyStoragePermissions(this);
@@ -80,6 +72,10 @@ public class MainActivity extends AppCompatActivity implements  SkinChangeListen
             changeSkin();
         });
 
+        mButton2 = findViewById(R.id.btn2);
+        mButton2.setOnClickListener(v->{
+            handleButton2();
+        });
 
         SkinFactory.addSkinChangeListener(MainActivity.this);
         mRecyclerView = findViewById(R.id.recycler);
@@ -98,17 +94,19 @@ public class MainActivity extends AppCompatActivity implements  SkinChangeListen
 
     @Override
     public void onSkinChange() {
-        mRecyclerAdapter.notifyDataSetChanged();
     }
 
     protected void changeSkin(){
-        if (isAllowChangeSkin){
-            File skinFile = new File(Environment.getExternalStorageDirectory(), "SkinDemo/skin.apk");
-            Log.d(TAG, "changeSkin:" + skinFile.getAbsolutePath());
-            SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
-            mSkinFactory.changeSkin(); //执行换肤操作
-            SkinFactory.notifySkinListeners();
-        }
+        File skinFile = new File(Environment.getExternalStorageDirectory(), "SkinDemo/skin.apk");
+        Log.d(TAG, "changeSkin:" + skinFile.getAbsolutePath());
+        SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
+        SkinFactory.applyAllSkinViews(); //执行换肤操作
+        SkinFactory.notifySkinListeners();
+    }
+
+    private void handleButton2(){
+        Intent intent = new Intent(MainActivity.this,DisplayActivity.class);
+        startActivity(intent);
     }
 
 

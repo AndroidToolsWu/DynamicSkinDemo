@@ -48,8 +48,8 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHold
             super(itemView);
             mTextView = itemView.findViewById(R.id.tv);
             mImageView = itemView.findViewById(R.id.iv);
-            SkinFactory.setViewSkin(mTextView);
-            SkinFactory.setViewSkin(mImageView);
+            SkinFactory.applySkin(mTextView);
+            SkinFactory.applySkin(mImageView);
         }
 
         public void setData(String data){

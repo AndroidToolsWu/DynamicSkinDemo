@@ -12,9 +12,10 @@ public class Application extends android.app.Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        mContext = getApplicationContext();
         //初始化换肤引擎
-        SkinEngine.getInstance().init(this);
+        SkinEngine.init(this);
+        mContext = getApplicationContext();
+
 
 
     }

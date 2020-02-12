@@ -1,63 +1,116 @@
 package com.example.dynamicskindemo.skin;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
-import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.example.dynamicskindemo.R;
-import com.example.dynamicskindemo.app.Application;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.core.content.res.ResourcesCompat;
+
 
 public class SkinFactory implements LayoutInflater.Factory2 {
 
-
+    //参数签名
+    static final Class<?>[] mConstructorSignature = new Class[]{Context.class, AttributeSet.class};
+    //系统view都在这几个包当中
+    static final String[] prefixs = new String[]{
+            "android.widget.",
+            "android.view.",
+            "android.webkit."
+    };
+    //用于存储view的构造
+    private static final HashMap<String, Constructor<? extends View>> sConstructorMap = new HashMap<>();
     private static final String TAG = "SkinFactory";
-    private AppCompatDelegate mDelegate;
-
     //缓存所有可变肤view
     private static List<SkinView> SKINVIEW_CACHE = new ArrayList<>();
     private static List<SkinChangeListener> LISTENER_LIST = new ArrayList<>();
+    private Context mContext;
 
 
-    public void setDelegate(AppCompatDelegate delegate) {
-        mDelegate = delegate;
+    SkinFactory(Activity activity){
+        mContext = activity;
     }
 
-
-    @Nullable
-    @Override   //拦截系统创建view的过程
-    public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context, @NonNull AttributeSet attributeSet) {
-        View view = mDelegate.createView(parent, name, context, attributeSet);
-        if (view == null) {
-            if (-1 == name.indexOf('.')) {
-                view = createViewByPrefix(context, name, prefixs, attributeSet);
-            } else {
-                view = createViewByPrefix(context, name, null, attributeSet);
+    /**
+     * 设置单个view的皮肤
+     * @param viewSkin
+     */
+    public static void applySkin(View viewSkin) {
+        for (SkinView skinView : SKINVIEW_CACHE) {
+            if (skinView.view == viewSkin) {
+                skinView.changeSkin();
+                break;
             }
         }
+    }
+
+    /**
+     * 在recyclerview的adapter.viewholder中设置换肤，解决view复用导致的换肤bug
+     * @param view
+     */
+    public static void applyRecyclerViewSkin(View view) {
+        applySkin(view);
+        if (view instanceof ViewGroup) {
+            ViewGroup parent = (ViewGroup) view;
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                applyRecyclerViewSkin(parent.getChildAt(i));
+            }
+        }
+    }
+
+    /**
+     * 全局换肤的入口
+     */
+    public static void applyAllSkinViews() {
+        for (SkinView skinView : SKINVIEW_CACHE) {
+            skinView.changeSkin();
+        }
+    }
+
+    /**
+     * 添加更换皮肤的监听器
+     * @param listener
+     */
+    public static void addSkinChangeListener(SkinChangeListener listener) {
+        LISTENER_LIST.add(listener);
+    }
+
+    public static void removeSkinChangeListener(SkinChangeListener listener) {
+        LISTENER_LIST.remove(listener);
+    }
+
+    /**
+     *  通知所有监听器执行更换皮肤操作
+     */
+    public static void notifySkinListeners() {
+        for (SkinChangeListener listener : LISTENER_LIST) {
+            listener.onSkinChange();
+        }
+    }
+
+    /**
+     * 通过此方法代替系统创建view方法
+     */
+    @Nullable
+    @Override
+    public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context, @NonNull AttributeSet attributeSet) {
+        View view = createViewFromTag(name, mContext, attributeSet);
+        if (view == null) {
+            createView(name, mContext, attributeSet);
+        }
         //收集可换肤view
-        collectSkinView(context, attributeSet, view);
+        collectSkinView(mContext, attributeSet, view);
         return view;
 
     }
@@ -73,7 +126,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
 
     /**
      * 收集需要换肤的控件
-     * 收集的方式是：通过自定义属性isSupport，从创建出来的很多View中，找到支持换肤的那些，保存到map中
+     * 收集的方式是：通过自定义属性support_skin，从创建出来的很多View中，找到支持换肤的那些，保存到map中
      */
     private void collectSkinView(Context context, AttributeSet attrs, View view) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.Skinable);
@@ -90,161 +143,48 @@ public class SkinFactory implements LayoutInflater.Factory2 {
             skinView.view = view;
             skinView.attrsMap = attrMap;
             SKINVIEW_CACHE.add(skinView);       //将可换肤的view，放到CACHE_SKINVIEW中
-            //Log.d(TAG, "collectSkinView: 收集view : " + skinView.view.toString());
         }
         typedArray.recycle();
     }
 
-    public static void setViewSkin(View viewSkin){
-        for (SkinView skinView : SKINVIEW_CACHE){
-            if (skinView.view == viewSkin){
-                skinView.changeSkin();
+    /**
+     * 如果不是自定义view，调用此方法
+     */
+    private View createViewFromTag(String name, Context context, AttributeSet attrs) {
+        View view = null;
+        if (-1 != name.indexOf('.')) {
+            return null;
+        }
+        for (String prefix : prefixs) {
+            view = createView(prefix + name, context, attrs);
+            if (view != null) {
+                break;
             }
         }
+        return view;
     }
-
-    public static void applyRecyclerViewSkin(View view){
-        setViewSkin(view);
-        if (view instanceof ViewGroup){
-            ViewGroup parent = (ViewGroup) view;
-            for (int i=0; i<parent.getChildCount(); i++){
-                applyRecyclerViewSkin(parent.getChildAt(i));
-            }
-        }
-    }
-
-    //添加更换皮肤的监听器
-    public static void addSkinChangeListener(SkinChangeListener listener){
-        LISTENER_LIST.add(listener);
-    }
-
-    public static void removeSkinChangeListener(SkinChangeListener listener){
-        LISTENER_LIST.remove(listener);
-    }
-
-    //通知所有监听器执行更换皮肤操作
-    public static void notifySkinListeners(){
-        for (SkinChangeListener listener : LISTENER_LIST){
-            listener.onSkinChange();
-        }
-    }
-
 
     /**
-     * 公开给外界换肤的入口
+     * 反射创建View,如果是自定义view，可以直接通过此方法创建
      */
-    public static void changeSkin() {
-        for (SkinView skinView : SKINVIEW_CACHE) {
-            skinView.changeSkin();
-        }
-    }
-
-    static class SkinView {
-        View view;
-        HashMap<String, String> attrsMap;
-
-        /**
-         * 真正的换肤操作
-         */
-        private void changeSkin() {
-            for (Map.Entry<String,String> entry : attrsMap.entrySet()){
-                //属性开头可能是？、@、#
-                String attrStr = filterValue(entry.getValue());
-                switch (entry.getKey()){
-                    case "background":
-                        Object bgValue = SkinEngine.getInstance().getBackground(Integer.parseInt(attrStr));
-                        if (bgValue instanceof Drawable){
-                            view.setBackground((Drawable) bgValue);
-                        }else if (bgValue instanceof Integer){
-                            view.setBackgroundColor((Integer) bgValue);
-                        }
-                        break;
-                    case "src":
-                        Object srcValue = SkinEngine.getInstance().getSrc(Integer.parseInt(attrStr));
-                        if (view instanceof ImageView){
-                            if (srcValue instanceof Drawable){
-                                ((ImageView) view).setImageDrawable((Drawable) srcValue);
-                            }else if (srcValue instanceof Integer){
-                                ((ImageView) view).setColorFilter((Integer) srcValue);
-                            }
-                        }
-                        break;
-                    case "textColor":
-                        ((TextView) view).setTextColor(SkinEngine.getInstance().getColor(Integer.parseInt(attrStr)));
-                        break;
-                    case "fontFamily":
-                        ((TextView) view).setTypeface(SkinEngine.getInstance().getTypeFace(Integer.parseInt(attrStr)));
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-        }
-
-        //过滤资源类型
-        private String filterValue(String value){
-            if (value.startsWith("#")){
-                return value;
-            }else if (value.startsWith("@") || value.startsWith("?")){
-                return value.substring(1);
-            }else {
-                return value;
-            }
-        }
-
-    }
-
-    static final Class<?>[] mConstructorSignature = new Class[]{Context.class, AttributeSet.class};
-    //系统view都在这几个包当中
-    static final String[] prefixs = new String[]{
-            "android.widget.",
-            "android.view.",
-            "android.webkit."
-    };
-    //用于存储view的构造
-    private static final HashMap<String, Constructor<? extends View>> sConstructorMap = new HashMap<>();
-    final Object[] mConstructorArgs = new Object[2];
-
-    /**
-     * 反射创建View
-     */
-    private View createViewByPrefix(Context context, String name, String[] prefixs, AttributeSet attrs) {
-
+    private View createView(String name, Context context, AttributeSet attrs) {
         Constructor<? extends View> constructor = sConstructorMap.get(name);
-        Class<? extends View> clazz = null;
-
         if (constructor == null) {
             try {
-                if (prefixs != null && prefixs.length > 0) {
-                    for (String prefix : prefixs) {
-                        clazz = context.getClassLoader().loadClass(
-                                prefix != null ? (prefix + name) : name).asSubclass(View.class);
-                        if (clazz != null) break;
-                    }
-                } else {
-                    if (clazz == null) {
-                        clazz = context.getClassLoader().loadClass(name).asSubclass(View.class);
-                    }
-                }
-                if (clazz == null) {
-                    return null;
-                }
-                constructor = clazz.getConstructor(mConstructorSignature);
+                Class<? extends View> aClass = context.getClassLoader().loadClass(name).asSubclass(View.class);
+                constructor = aClass.getConstructor(mConstructorSignature);
+                constructor.setAccessible(true);
+                sConstructorMap.put(name, constructor);
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
             }
-            constructor.setAccessible(true);
-            sConstructorMap.put(name, constructor);
         }
-        Object[] args = mConstructorArgs;
-        args[1] = attrs;
-        try {
-            final View view = constructor.newInstance(args);
-            return view;
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (null != constructor) {
+            try {
+                return constructor.newInstance(context, attrs);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
