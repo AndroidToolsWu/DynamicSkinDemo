@@ -103,7 +103,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context, @NonNull AttributeSet attributeSet) {
         View view = createViewFromTag(name, context, attributeSet);
         if (view == null) {
-            createView(name, context, attributeSet);
+            view = createView(name, context, attributeSet);
         }
         //收集可换肤view
         collectSkinView(context, attributeSet, view);
