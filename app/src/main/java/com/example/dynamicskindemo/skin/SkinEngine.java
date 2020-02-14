@@ -39,8 +39,8 @@ public class SkinEngine {
     public static void init(Application application) {
         mAppApplication = application;
         mContext = application.getApplicationContext();
-        synchronized (SkinEngine.class){
-            if (null == instance){
+        synchronized (SkinEngine.class) {
+            if (null == instance) {
                 instance = new SkinEngine();
             }
         }
@@ -93,6 +93,7 @@ public class SkinEngine {
 
     /**
      * 提供外部资源包里的字体
+     *
      * @param resId
      * @return
      */

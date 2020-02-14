@@ -52,7 +52,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHold
             SkinFactory.applySkin(mImageView);
         }
 
-        public void setData(String data){
+        void setData(String data){
             SkinFactory.applyRecyclerViewSkin(itemView);
             mTextView.setText(data);
         }

@@ -1,16 +1,10 @@
 package com.example.dynamicskindemo;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.widget.Button;
 
 import com.example.dynamicskindemo.recycler.RecyclerAdapter;
@@ -22,19 +16,22 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements  SkinChangeListener{
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-    public static String TAG = "MainActivity";
-    private Button mButton,mButton2;
-    private RecyclerView mRecyclerView;
-    private RecyclerAdapter mRecyclerAdapter;
-
-    private List<String> mListData = new ArrayList<>();
+public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    public static String TAG = "MainActivity";
     private static String[] PERMISSIONS_STORAGE = {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE"};
+    private Button mButton, mButton2;
+    private RecyclerView mRecyclerView;
+    private RecyclerAdapter mRecyclerAdapter;
+    private List<String> mListData = new ArrayList<>();
 
     public static void verifyStoragePermissions(AppCompatActivity activity) {
 
@@ -61,23 +58,22 @@ public class MainActivity extends AppCompatActivity implements  SkinChangeListen
     }
 
     private void initData() {
-        for (int i=0; i<20; i++){
-            mListData.add("Hello Ninebot"+i);
+        for (int i = 0; i < 20; i++) {
+            mListData.add("Hello Ninebot" + i);
         }
     }
 
     private void initView() {
         mButton = findViewById(R.id.btn);
-        mButton.setOnClickListener( v ->{
+        mButton.setOnClickListener(v -> {
             changeSkin();
         });
 
         mButton2 = findViewById(R.id.btn2);
-        mButton2.setOnClickListener(v->{
+        mButton2.setOnClickListener(v -> {
             handleButton2();
         });
 
-        SkinFactory.addSkinChangeListener(MainActivity.this);
         mRecyclerView = findViewById(R.id.recycler);
         RecyclerView.LayoutManager manager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(manager);
@@ -88,24 +84,18 @@ public class MainActivity extends AppCompatActivity implements  SkinChangeListen
 
     @Override
     protected void onDestroy() {
-        SkinFactory.removeSkinChangeListener(MainActivity.this);
         super.onDestroy();
     }
 
-    @Override
-    public void onSkinChange() {
-    }
-
-    protected void changeSkin(){
+    protected void changeSkin() {
         File skinFile = new File(Environment.getExternalStorageDirectory(), "SkinDemo/skin.apk");
-        Log.d(TAG, "changeSkin:" + skinFile.getAbsolutePath());
         SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
         SkinFactory.applyAllSkinViews(); //执行换肤操作
         SkinFactory.notifySkinListeners();
     }
 
-    private void handleButton2(){
-        Intent intent = new Intent(MainActivity.this,DisplayActivity.class);
+    private void handleButton2() {
+        Intent intent = new Intent(MainActivity.this, DisplayActivity.class);
         startActivity(intent);
     }
 

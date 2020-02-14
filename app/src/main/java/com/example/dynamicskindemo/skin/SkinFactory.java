@@ -1,6 +1,5 @@
 package com.example.dynamicskindemo.skin;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
@@ -35,15 +34,10 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     //缓存所有可变肤view
     private static List<SkinView> SKINVIEW_CACHE = new ArrayList<>();
     private static List<SkinChangeListener> LISTENER_LIST = new ArrayList<>();
-    private Context mContext;
-
-
-    SkinFactory(Activity activity){
-        mContext = activity;
-    }
 
     /**
      * 设置单个view的皮肤
+     *
      * @param viewSkin
      */
     public static void applySkin(View viewSkin) {
@@ -57,6 +51,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
 
     /**
      * 在recyclerview的adapter.viewholder中设置换肤，解决view复用导致的换肤bug
+     *
      * @param view
      */
     public static void applyRecyclerViewSkin(View view) {
@@ -80,6 +75,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
 
     /**
      * 添加更换皮肤的监听器
+     *
      * @param listener
      */
     public static void addSkinChangeListener(SkinChangeListener listener) {
@@ -91,7 +87,7 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     }
 
     /**
-     *  通知所有监听器执行更换皮肤操作
+     * 通知所有监听器执行更换皮肤操作
      */
     public static void notifySkinListeners() {
         for (SkinChangeListener listener : LISTENER_LIST) {
@@ -105,12 +101,12 @@ public class SkinFactory implements LayoutInflater.Factory2 {
     @Nullable
     @Override
     public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context, @NonNull AttributeSet attributeSet) {
-        View view = createViewFromTag(name, mContext, attributeSet);
+        View view = createViewFromTag(name, context, attributeSet);
         if (view == null) {
-            createView(name, mContext, attributeSet);
+            createView(name, context, attributeSet);
         }
         //收集可换肤view
-        collectSkinView(mContext, attributeSet, view);
+        collectSkinView(context, attributeSet, view);
         return view;
 
     }

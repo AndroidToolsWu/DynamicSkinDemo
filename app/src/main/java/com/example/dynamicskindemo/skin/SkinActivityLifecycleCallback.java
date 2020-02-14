@@ -2,9 +2,11 @@ package com.example.dynamicskindemo.skin;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 
+import java.io.File;
 import java.lang.reflect.Field;
 
 import androidx.annotation.NonNull;
@@ -18,7 +20,7 @@ public class SkinActivityLifecycleCallback implements android.app.Application.Ac
 
     @Override
     public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-        //在activity创建时进行全局的换肤操作
+        //在activity创建时进行全局拦截view的创建，并加载皮肤资源
         LayoutInflater layoutInflater = LayoutInflater.from(activity);
         try {
             Field field = LayoutInflater.class.getDeclaredField("mFactorySet");
@@ -27,15 +29,21 @@ public class SkinActivityLifecycleCallback implements android.app.Application.Ac
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        SkinFactory skinFactory = new SkinFactory(activity);
-        layoutInflater.setFactory2(skinFactory);
-        //LayoutInflaterCompat.setFactory2(layoutInflater, skinFactory);
-        Log.d(TAG, "onActivityCreated: ");
+        SkinFactory skinFactory = new SkinFactory();
+        LayoutInflaterCompat.setFactory2(layoutInflater, skinFactory);
+        loadSkin();
+    }
+
+    private void loadSkin() {
+        File skinFile = new File(Environment.getExternalStorageDirectory(), "SkinDemo/skin.apk");
+        Log.d(TAG, "changeSkin:" + skinFile.getAbsolutePath());
+        SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
     }
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
-
+        //在view创建完成后进行换肤
+        SkinFactory.applyAllSkinViews();
     }
 
     @Override
