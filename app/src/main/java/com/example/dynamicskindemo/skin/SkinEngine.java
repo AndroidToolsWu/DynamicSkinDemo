@@ -8,6 +8,8 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
+import android.provider.Settings;
 import android.text.TextUtils;
 
 import com.example.dynamicskindemo.app.Application;
@@ -33,16 +35,15 @@ public class SkinEngine {
     }
 
     public static SkinEngine getInstance() {
+        if (instance == null) throw new NullPointerException("SkinEngine instance is null");
         return instance;
     }
 
     public static void init(Application application) {
         mAppApplication = application;
         mContext = application.getApplicationContext();
-        synchronized (SkinEngine.class) {
-            if (null == instance) {
-                instance = new SkinEngine();
-            }
+        if (null == instance) {
+            instance = new SkinEngine();
         }
     }
 
