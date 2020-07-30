@@ -18,8 +18,6 @@ public class SkinActivityLifecycleCallback implements android.app.Application.Ac
 
     @Override
     public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-        //在activity创建时进行全局拦截view的创建，并加载皮肤资源
-        LayoutInflater.from(activity).cloneInContext(activity).setFactory2(SkinFactory.getInstance());
         loadSkin();
     }
 
