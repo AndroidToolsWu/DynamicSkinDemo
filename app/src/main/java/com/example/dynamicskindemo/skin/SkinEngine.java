@@ -8,26 +8,23 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.media.AudioManager;
-import android.provider.Settings;
 import android.text.TextUtils;
+
+import androidx.core.content.ContextCompat;
 
 import com.example.dynamicskindemo.app.Application;
 
 import java.io.File;
 import java.lang.reflect.Method;
 
-import androidx.core.content.ContextCompat;
-
 @SuppressLint("StaticFieldLeak")
 public class SkinEngine {
 
-    private static SkinEngine instance;
+    private static SkinEngine mInstance;
     private static Application mAppApplication;
     private static Context mContext;
     private Resources mResources;
     private String mPackageName;
-
 
     private SkinEngine() {
         //绑定全局监听换肤
@@ -35,15 +32,15 @@ public class SkinEngine {
     }
 
     public static SkinEngine getInstance() {
-        if (instance == null) throw new NullPointerException("SkinEngine instance is null");
-        return instance;
+        if (mInstance == null) throw new NullPointerException("SkinEngine can't be null");
+        return mInstance;
     }
 
     public static void init(Application application) {
         mAppApplication = application;
         mContext = application.getApplicationContext();
-        if (null == instance) {
-            instance = new SkinEngine();
+        if (mInstance == null) {
+            mInstance = new SkinEngine();
         }
     }
 
@@ -72,14 +69,10 @@ public class SkinEngine {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     /**
      * 提供外部资源包里的颜色
-     *
-     * @param resId
-     * @return
      */
     int getColor(int resId) {
         if (mResources == null) {
@@ -94,9 +87,6 @@ public class SkinEngine {
 
     /**
      * 提供外部资源包里的字体
-     *
-     * @param resId
-     * @return
      */
     @SuppressLint("NewApi")
     Typeface getTypeFace(int resId) {
@@ -112,9 +102,6 @@ public class SkinEngine {
 
     /**
      * 提供外部资源包的图片
-     *
-     * @param resId
-     * @return
      */
     Drawable getDrawable(int resId) {
         if (mResources == null) {
@@ -146,11 +133,11 @@ public class SkinEngine {
 
     private int getIdentifier(int resId) {
         //例如resId为ic_launcher图片id，那么要通过这种方式获得皮肤包里的资源
-        String resName = mResources.getResourceEntryName(resId);  //名称，例如ic_launcher
-        String resType = mResources.getResourceTypeName(resId);   //类型，例如drawable
+        //名称，例如ic_launcher
+        String resName = mResources.getResourceEntryName(resId);
+        //类型，例如drawable
+        String resType = mResources.getResourceTypeName(resId);
         //生成后R.drawable.ic_launcher
         return mResources.getIdentifier(resName, resType, mPackageName);
     }
-
-
 }

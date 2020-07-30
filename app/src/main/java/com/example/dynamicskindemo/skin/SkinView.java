@@ -9,49 +9,70 @@ import java.util.HashMap;
 import java.util.Map;
 
 class SkinView {
-    View view;
-    HashMap<String, String> attrsMap;
+
+    public static final String ATTR_BACKGROUND = "background";
+    public static final String ATTR_SRC = "src";
+    public static final String ATTR_TEXT_COLOR = "textColor";
+    public static final String ATTR_FONT_FAMILY = "fontFamily";
+
+    private View mView;
+    private final HashMap<String, String> mAttributeMap = new HashMap<>();
 
     /**
      * 真正的换肤操作
      */
-    void changeSkin() {
-        for (Map.Entry<String, String> entry : attrsMap.entrySet()) {
-            //属性开头可能是？、@、#
-            String attrStr = filterValue(entry.getValue());
+    void changeViewSkin() {
+        for (Map.Entry<String, String> entry : mAttributeMap.entrySet()) {
+            // 属性开头可能是？、@、#
+            String attributeResource = filterValue(entry.getValue());
             switch (entry.getKey()) {
-                case "background":
-                    Object bgValue = SkinEngine.getInstance().getBackground(Integer.parseInt(attrStr));
-                    if (bgValue instanceof Drawable) {
-                        view.setBackground((Drawable) bgValue);
-                    } else if (bgValue instanceof Integer) {
-                        view.setBackgroundColor((Integer) bgValue);
-                    }
+                case ATTR_BACKGROUND:
+                    changeBackgroundSkin(attributeResource);
                     break;
-                case "src":
-                    Object srcValue = SkinEngine.getInstance().getSrc(Integer.parseInt(attrStr));
-                    if (view instanceof ImageView) {
-                        if (srcValue instanceof Drawable) {
-                            ((ImageView) view).setImageDrawable((Drawable) srcValue);
-                        } else if (srcValue instanceof Integer) {
-                            ((ImageView) view).setColorFilter((Integer) srcValue);
-                        }
-                    }
+                case ATTR_SRC:
+                    changeSrcSkin(attributeResource);
                     break;
-                case "textColor":
-                    ((TextView) view).setTextColor(SkinEngine.getInstance().getColor(Integer.parseInt(attrStr)));
+                case ATTR_TEXT_COLOR:
+                    changeTextColorSkin(attributeResource);
                     break;
-                case "fontFamily":
-                    ((TextView) view).setTypeface(SkinEngine.getInstance().getTypeFace(Integer.parseInt(attrStr)));
-                    break;
-                default:
+                case ATTR_FONT_FAMILY:
+                    changeFontFamilySkin(attributeResource);
                     break;
             }
         }
-
     }
 
-    //过滤资源类型
+    private void changeBackgroundSkin(String attributeResource) {
+        Object bgValue = SkinEngine.getInstance().getBackground(Integer.parseInt(attributeResource));
+        if (bgValue instanceof Drawable) {
+            mView.setBackground((Drawable) bgValue);
+        } else if (bgValue instanceof Integer) {
+            mView.setBackgroundColor((Integer) bgValue);
+        }
+    }
+
+    private void changeSrcSkin(String attributeResource) {
+        Object srcValue = SkinEngine.getInstance().getSrc(Integer.parseInt(attributeResource));
+        if (mView instanceof ImageView) {
+            if (srcValue instanceof Drawable) {
+                ((ImageView) mView).setImageDrawable((Drawable) srcValue);
+            } else if (srcValue instanceof Integer) {
+                ((ImageView) mView).setColorFilter((Integer) srcValue);
+            }
+        }
+    }
+
+    private void changeTextColorSkin(String attributeResource) {
+        ((TextView) mView).setTextColor(SkinEngine.getInstance().getColor(Integer.parseInt(attributeResource)));
+    }
+
+    private void changeFontFamilySkin(String attributeResource) {
+        ((TextView) mView).setTypeface(SkinEngine.getInstance().getTypeFace(Integer.parseInt(attributeResource)));
+    }
+
+    /**
+     * 过滤资源类型
+     */
     private String filterValue(String value) {
         if (value.startsWith("#")) {
             return value;
@@ -62,5 +83,20 @@ class SkinView {
         }
     }
 
+    public View getView() {
+        return mView;
+    }
 
+    public void setView(View view) {
+        mView = view;
+    }
+
+    public HashMap<String, String> getAttributeMap() {
+        return mAttributeMap;
+    }
+
+    public void setAttributeMap(HashMap<String, String> attributeMap) {
+        mAttributeMap.clear();
+        mAttributeMap.putAll(attributeMap);
+    }
 }

@@ -6,13 +6,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.dynamicskindemo.R;
 import com.example.dynamicskindemo.skin.SkinFactory;
 
 import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHolder>{
 
@@ -39,7 +39,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHold
         return mData.size();
     }
 
-    class MyHolder extends RecyclerView.ViewHolder{
+    static class MyHolder extends RecyclerView.ViewHolder{
 
         TextView mTextView;
         ImageView mImageView;
@@ -48,14 +48,13 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.MyHold
             super(itemView);
             mTextView = itemView.findViewById(R.id.tv);
             mImageView = itemView.findViewById(R.id.iv);
-            SkinFactory.applySkin(mTextView);
-            SkinFactory.applySkin(mImageView);
+            SkinFactory.getInstance().applySkin(mTextView);
+            SkinFactory.getInstance().applySkin(mImageView);
         }
 
         void setData(String data){
-            SkinFactory.applyRecyclerViewSkin(itemView);
+            SkinFactory.getInstance().applyRecyclerViewSkin(itemView);
             mTextView.setText(data);
         }
-
     }
 }

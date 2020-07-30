@@ -4,11 +4,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.widget.Button;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.dynamicskindemo.recycler.RecyclerAdapter;
-import com.example.dynamicskindemo.skin.SkinChangeListener;
 import com.example.dynamicskindemo.skin.SkinEngine;
 import com.example.dynamicskindemo.skin.SkinFactory;
 
@@ -16,21 +19,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
-    public static String TAG = "MainActivity";
     private static String[] PERMISSIONS_STORAGE = {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE"};
-    private Button mButton, mButton2;
-    private RecyclerView mRecyclerView;
-    private RecyclerAdapter mRecyclerAdapter;
     private List<String> mListData = new ArrayList<>();
 
     public static void verifyStoragePermissions(AppCompatActivity activity) {
@@ -64,40 +58,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        mButton = findViewById(R.id.btn);
-        mButton.setOnClickListener(v -> {
+        Button button = findViewById(R.id.btn);
+        button.setOnClickListener(v -> {
             changeSkin();
         });
 
-        mButton2 = findViewById(R.id.btn2);
-        mButton2.setOnClickListener(v -> {
-            handleButton2();
+        Button button2 = findViewById(R.id.btn2);
+        button2.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, DisplayActivity.class);
+            startActivity(intent);
         });
 
-        mRecyclerView = findViewById(R.id.recycler);
+        RecyclerView recyclerView = findViewById(R.id.recycler);
         RecyclerView.LayoutManager manager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(manager);
-        mRecyclerAdapter = new RecyclerAdapter(mListData);
-        mRecyclerView.setAdapter(mRecyclerAdapter);
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+        recyclerView.setLayoutManager(manager);
+        RecyclerAdapter recyclerAdapter = new RecyclerAdapter(mListData);
+        recyclerView.setAdapter(recyclerAdapter);
     }
 
     protected void changeSkin() {
         File skinFile = new File(Environment.getExternalStorageDirectory(), "SkinDemo/skin.apk");
         SkinEngine.getInstance().load(skinFile.getAbsolutePath()); //加载外部资源包
-        SkinFactory.applyAllSkinViews(); //执行换肤操作
-        SkinFactory.notifySkinListeners();
+        SkinFactory.getInstance().applyAllSkinViews(); //执行换肤操作
+        SkinFactory.getInstance().notifySkinListeners();
     }
-
-    private void handleButton2() {
-        Intent intent = new Intent(MainActivity.this, DisplayActivity.class);
-        startActivity(intent);
-    }
-
-
 }
